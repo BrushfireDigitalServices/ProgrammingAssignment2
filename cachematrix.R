@@ -11,16 +11,21 @@
 ##    3. The underlying data sets can be modified without interfering with
 ##       the caching closures the data sets were used to construct.
 ## 
-## makeCacheMatrix(x) can be
 
 
 
 ## Function: makeCacheMatrix(x = matrix())
 # 
 ## Factory to create and return a "special matrix" (in the form of a list of 
-## functions defined below) which can save computation by caching its inverse. 
+## functions within a closure, defined below) which can save computation by 
+## caching the matrix's inverse.
 ##
 ## Argument 'x' may be a matrix, or a data type which will be coerced to matrix.
+##
+## The "original" matrix can be of any type that R can coerce to a matrix.
+## Usual rules for data frame to matrix coercion apply.
+##
+## No checks are made at construction time about dimensions of 'x'.
 ##
 ## Usage: Always save the output of this function to a name. For example,
 ##        if 'x' is an invertible martix, 'cacheMatrix <- makeCacheMatrix(x)'
@@ -63,8 +68,9 @@ makeCacheMatrix <- function(x = matrix()) {
     ##
     ## NOTE: If the returned matrix is assigned to a variable 'foo',
     ## modifications to 'foo' will not affect 'x', and vice-versa.
-    getMatrix <- function() 
+    getMatrix <- function() {
         x
+    }
     
     ## Function: setInverse(newInv)
     ##
@@ -74,15 +80,25 @@ makeCacheMatrix <- function(x = matrix()) {
     ## NOTE: "Lazy" principles are preserved (esp. for large datasets)
     ## by not performing any correctness checks on 'newInv'
     ## before assigning the value of 'newInv' to 'inv'
-    setInverse <- function(newInv) 
+    setInverse <- function(newInv) {
         inv <<- newInv
+    }
     
     ## Function: getInverse()
     ##
-    ##
-    getInverse <- function() 
+    ## Returns the cached inverse "original" matrix, or NULL if no valid inverse
+    ## has yet been calculated.
+    ## 
+    ## Callers of this function may consider NULL a flag indicating that the
+    ## original martrix has changed since the last calculation.
+    getInverse <- function() {
         inv
+    }
     
+    ## Returns a list whose elements are the functions defined above. In this
+    ## way, access to this closure is retained after makeCacheMatrix returns.
+    ## The functions can then be called by subsetting the list with the '$'
+    ## operator, such as 'cacheMatrix$getMatrix()'
     list(setMatrix = setMatrix, getMatrix = getMatrix,
          setInverse = setInverse,
          getInverse = getInverse)
